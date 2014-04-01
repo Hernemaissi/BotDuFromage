@@ -40,14 +40,14 @@ public class BotDuFromage implements Player {
 //		System.out.println("The situation now: " + situation);
 //		System.out.println("Move number: " + this.moveNumber);
 		
-		System.out.println("Time left at the start of turn: " + timeLeft);
-		int score = maxMove(situation, RECURSIONDEPTH, -500, 500);
+
+		int score = maxMove(situation, RECURSIONDEPTH, Integer.MIN_VALUE, Integer.MAX_VALUE);
 		
 		this.highestFirePower = 0;
 
 		// System.out.println("Chosen situtation: " + chosen.getSituation());
 //		System.out.println("Chosen move: " + this.bestMove);
-//		System.out.println("had score: " + score);
+		System.out.println("Fromage had score: " + score);
 
 		storeEncodedState(situation.copyApply(bestMove).encode(null));
 		return this.bestMove;
@@ -163,6 +163,7 @@ public class BotDuFromage implements Player {
 		int pieceScore = 0;
 		int firePowerScore = 0;
 		int attackScore = 0;
+		int blockedScore = 0;
 		if (situation.isFinished()) {
 			if (situation.getWinner() == this.side) {
 				score = Integer.MAX_VALUE;
@@ -193,18 +194,20 @@ public class BotDuFromage implements Player {
 		
 		if (situation.getAttacker(this.side) != null) {
 			if (situation.getBoard().get(situation.getTarget(this.side)).equals(Side.NONE)) {
-				attackScore += situation.getBoard().get(situation.getTarget(this.side)).getValue() * 5;
-			} else {
-				attackScore += situation.getBoard().get(situation.getTarget(this.side)).getValue();
+				attackScore += 10;
+				attackScore -= distance(situation.getAttacker(this.side), situation.getTarget(this.side));
 			}
 			
-			attackScore -= distance(situation.getAttacker(this.side), situation.getTarget(this.side));
 		}
 		if (situation.getAttacker(this.side.opposite()) != null) {
-			attackScore -= situation.getBoard().get(situation.getTarget(this.side.opposite())).getValue();
+			attackScore -= 10;
 		}
 		
-		score = pieceScore * PIECEWEIGHT + firePowerScore * POWERWEIGHT + attackScore * ATTACKWEIGHT + this.highestFirePower * HIGHESTPOWERWEIGHT;
+		if (situation.getAttacker(this.side) != null && situation.isBlocked(situation.getAttacker(side))) {
+			blockedScore -= 50;
+		}
+		
+		score = pieceScore * PIECEWEIGHT + firePowerScore * POWERWEIGHT + attackScore * ATTACKWEIGHT + this.highestFirePower * HIGHESTPOWERWEIGHT + blockedScore * BLOCKEDWEIGHT;
 	
 		return score;
 	}
@@ -236,11 +239,12 @@ public class BotDuFromage implements Player {
 	private BitSet[] visitedStates;
 	private int index;
 	private static final int MAXINDEX = 4;
-	private static final int RECURSIONDEPTH = 6;
-	private static final int PIECEWEIGHT = 10;
+	private static final int RECURSIONDEPTH = 5;
+	private static final int PIECEWEIGHT = 50;
 	private static final int POWERWEIGHT = 5;
 	private static final int ATTACKWEIGHT = 1;
-	private static final int HIGHESTPOWERWEIGHT = 5;
+	private static final int HIGHESTPOWERWEIGHT = 0;
+	private static final int BLOCKEDWEIGHT = 0;
 	private Move bestMove;
 	private int maxPieceValue;
 	private int highestFirePower;
